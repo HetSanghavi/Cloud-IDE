@@ -6,7 +6,7 @@ A focused browser-based workspace for creating HTML, CSS, and JavaScript project
 
 Prerequisites:
 
-- Node.js 20 or later
+- Node.js 20.9+ within the 20.x release line
 - Docker Desktop, or an available PostgreSQL database
 
 ```bash
@@ -36,7 +36,25 @@ Generate a local secret with:
 openssl rand -base64 32
 ```
 
-The included `docker-compose.yml` supplies local PostgreSQL settings matching `.env.example`. For production, use managed PostgreSQL and set the same variables in the deployment environment.
+The included `docker-compose.yml` supplies local PostgreSQL settings matching `.env.example`. It is development-only: its credentials, exposed database port, and local volume must not be used for production. Use managed PostgreSQL and deployment-managed environment variables in production.
+
+## Deployment notes
+
+Deploy on a Node.js 20 host with a managed PostgreSQL database. Build and release with:
+
+```bash
+npm ci
+npm run db:generate
+npm run db:deploy
+npm run build
+npm run start
+```
+
+`DATABASE_URL` and `AUTH_SECRET` are secrets. Use a production PostgreSQL URL rather than the local Docker URL, retain a stable high-entropy `AUTH_SECRET`, and configure `AUTH_TRUST_HOST=true` only behind a trusted proxy that provides a correct host header.
+
+ZIP import accepts archives up to 8 MB. Configure the hosting platform or reverse proxy request-body limit above 8 MB so the application can apply its archive validation itself.
+
+Normal application and API routes send production security headers. The preview routes intentionally retain their route-specific CSP and sandbox headers so user project JavaScript stays isolated. The application CSP permits inline scripts, inline styles, and eval for Next.js and Monaco compatibility; a nonce-based CSP can be evaluated in a future hardening pass.
 
 ## Verification
 
@@ -80,4 +98,8 @@ npm run build
 
 ## Rate-limit deployment note
 
-Login, registration, and ZIP import throttling use the current process-local rate-limit store. This is appropriate for a single Node.js deployment, but production deployments with multiple instances should replace it with a shared store such as Redis so limits apply consistently across instances.
+Login, registration, and ZIP import throttling use the current process-local rate-limit store. It resets when the process restarts, and separate application instances do not share buckets. This is appropriate for a single private/test deployment, but horizontally scaled production deployments need a shared store such as Redis so limits apply consistently across instances.
+
+## Dependency note
+
+The project currently uses an Auth.js beta release. Authentication behavior is unchanged, but upgrade to a stable supported Auth.js release should be evaluated before an internet-facing production launch.

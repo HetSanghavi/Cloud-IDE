@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+const maxRateBuckets = 10_000;
+
+function pruneExpiredRateBuckets(now: number) {
+  for (const [key, bucket] of rateBuckets) {
+    if (bucket.resetAt <= now) rateBuckets.delete(key);
+  }
+}
 
 export function getClientKey(request: Pick<NextRequest, "headers">) {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
@@ -8,8 +15,10 @@ export function getClientKey(request: Pick<NextRequest, "headers">) {
 
 export function isRateLimited(key: string, limit: number, intervalMs: number) {
   const now = Date.now();
+  pruneExpiredRateBuckets(now);
   const bucket = rateBuckets.get(key);
   if (!bucket || bucket.resetAt <= now) {
+    if (rateBuckets.size >= maxRateBuckets) return true;
     rateBuckets.set(key, { count: 1, resetAt: now + intervalMs });
     return false;
   }

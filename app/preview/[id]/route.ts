@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUserId, error } from "@/lib/http";
 import { ownedProject } from "@/lib/projects";
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const userId = await currentUserId();
   if (!userId) return error("Authentication required.", 401);
-  const project = await ownedProject(userId, params.id);
+  const project = await ownedProject(userId, id);
   if (!project) return error("Project not found.", 404);
   const source = `/preview/${encodeURIComponent(project.id)}/content`;
   const document = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${project.name.replace(/[<>&"]/g, "")}</title><style>html,body,iframe{width:100%;height:100%;margin:0;border:0}body{background:#1b1c24}iframe{display:block;background:#fff}</style></head><body><iframe title="Project preview" sandbox="allow-scripts allow-forms allow-modals" referrerpolicy="no-referrer" src="${source}"></iframe></body></html>`;

@@ -16,12 +16,13 @@
 | ZIP import/export | Fully implemented | Server-side ZIP import/export with archive size, entry count, nesting, path, name, and project-size limits. |
 | Sharing and public viewing | Fully implemented | Public/private database visibility, opaque share identifiers, read-only public viewer, and authenticated copy flow are implemented. |
 | Dark/light theme | Fully implemented | Preference is persisted locally as non-sensitive UI configuration. |
-| Security | Implemented with deployment limitations | Ownership checks, credential hashing, validation, path controls, ZIP limits, sandboxing, external-preview isolation, optimistic concurrency, and registration/import rate limiting are implemented. Production deployment still needs HTTPS, platform edge security headers, and a shared rate-limit store for multi-instance deployments. |
+| Security | Implemented with deployment limitations | Ownership checks, credential hashing, validation, path controls, ZIP limits, sandboxing, external-preview isolation, optimistic concurrency, registration/import rate limiting, and normal-route production security headers are implemented. Production deployment still needs HTTPS, a trusted proxy, and a shared rate-limit store for multi-instance deployments. |
 | Resizable panels | Fully implemented | Desktop and tablet layouts support draggable and keyboard-accessible editor/preview resizing with responsive minimum widths. |
 | Automated validation | Passing locally | `test:account-uniqueness` (8 tests), `test:concurrency` (11 tests), `test:medium-low` (5 tests), `test:zip-import` (12 tests), typecheck, lint, and production build pass with dependencies and PostgreSQL configured. |
 
 ## Known limitations
 
-- The login, registration, and ZIP import rate limiter is process-local. Multi-instance production deployments need a shared store such as Redis.
+- The login, registration, and ZIP import rate limiter is process-local, resets after a process restart, and is not shared across instances. Multi-instance production deployments need a shared store such as Redis.
 - Safari runtime errors in the sandboxed preview error tray remain unverified and require live Safari validation before being treated as supported.
 - Full interactive browser QA is not automated in the current environment.
+- The current Auth.js beta dependency should be evaluated for upgrade to a stable supported release before an internet-facing production launch.

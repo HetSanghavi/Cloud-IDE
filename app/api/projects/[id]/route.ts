@@ -4,27 +4,29 @@ import { ownedProject, ProjectSaveConflictError, saveProjectWorkspace, serialize
 import { prisma } from "@/lib/prisma";
 import { workspaceSchema } from "@/lib/validation";
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const userId = await currentUserId();
   if (!userId) return error("Authentication required.", 401);
-  const project = await ownedProject(userId, params.id);
+  const project = await ownedProject(userId, id);
   if (!project) return error("Project not found.", 404);
   return NextResponse.json(serializeProject(project));
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const userId = await currentUserId();
   if (!userId) return error("Authentication required.", 401);
   const parsed = workspaceSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return error("Project workspace is invalid.", 400);
-  const project = await ownedProject(userId, params.id);
+  const project = await ownedProject(userId, id);
   if (!project) return error("Project not found.", 404);
   try {
     const saved = await saveProjectWorkspace(userId, project.id, parsed.data);
     return NextResponse.json(serializeProject(saved));
   } catch (cause) {
     if (cause instanceof ProjectSaveConflictError) {
-      const latest = await ownedProject(userId, params.id);
+      const latest = await ownedProject(userId, id);
       if (!latest) return error("Project not found.", 404);
       return NextResponse.json({ error: "This project changed in another session. Reload the latest version before saving again.", code: "PROJECT_CONFLICT", project: serializeProject(latest) }, { status: 409 });
     }
@@ -32,10 +34,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const userId = await currentUserId();
   if (!userId) return error("Authentication required.", 401);
-  const project = await ownedProject(userId, params.id);
+  const project = await ownedProject(userId, id);
   if (!project) return error("Project not found.", 404);
   await prisma.project.delete({ where: { id: project.id } });
   return new NextResponse(null, { status: 204 });

@@ -120,11 +120,11 @@ test("visibility is persisted before the accepted project reports public", async
   assert.equal(saved.visibility, "PUBLIC");
   assert.equal(latest?.visibility, "PUBLIC");
   assert.equal(latest?.revision, project.revision + 1);
-  const publicResponse = await publicProject(new NextRequest(`http://localhost/api/public/${project.shareId}`), { params: { shareId: project.shareId } });
+  const publicResponse = await publicProject(new NextRequest(`http://localhost/api/public/${project.shareId}`), { params: Promise.resolve({ shareId: project.shareId }) });
   assert.equal(publicResponse.status, 200);
   const privateSaved = await saveProjectWorkspace(user.id, project.id, workspace(saved.revision, "private content", fileId, "private"));
   assert.equal(privateSaved.visibility, "PRIVATE");
-  const privateResponse = await publicProject(new NextRequest(`http://localhost/api/public/${project.shareId}`), { params: { shareId: project.shareId } });
+  const privateResponse = await publicProject(new NextRequest(`http://localhost/api/public/${project.shareId}`), { params: Promise.resolve({ shareId: project.shareId }) });
   assert.equal(privateResponse.status, 404);
 });
 
@@ -146,8 +146,8 @@ test("the API returns a distinct conflict response without overwriting the newer
   apiUserId = user.id;
   const first = new NextRequest(`http://localhost/api/projects/${project.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(workspace(project.revision, "accepted", fileId)) });
   const stale = new NextRequest(`http://localhost/api/projects/${project.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(workspace(project.revision, "rejected", fileId)) });
-  assert.equal((await PUT(first, { params: { id: project.id } })).status, 200);
-  const response = await PUT(stale, { params: { id: project.id } });
+  assert.equal((await PUT(first, { params: Promise.resolve({ id: project.id }) })).status, 200);
+  const response = await PUT(stale, { params: Promise.resolve({ id: project.id }) });
   const body = await response.json();
   assert.equal(response.status, 409);
   assert.equal(body.code, "PROJECT_CONFLICT");
@@ -172,9 +172,9 @@ test("the save route keeps authentication and ownership responses unchanged", as
   createdUsers.push(otherUser.id);
   const request = () => new NextRequest(`http://localhost/api/projects/${project.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(workspace(project.revision, "unauthorized", fileId)) });
   apiUserId = null;
-  assert.equal((await PUT(request(), { params: { id: project.id } })).status, 401);
+  assert.equal((await PUT(request(), { params: Promise.resolve({ id: project.id }) })).status, 401);
   apiUserId = otherUser.id;
-  assert.equal((await PUT(request(), { params: { id: project.id } })).status, 404);
+  assert.equal((await PUT(request(), { params: Promise.resolve({ id: project.id }) })).status, 404);
   apiUserId = null;
   assert.equal(await fileContent(user.id, project.id), "initial");
 });

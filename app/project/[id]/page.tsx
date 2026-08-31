@@ -1,5 +1,6 @@
 import { PublicProject } from "@/components/cloud-ide";
 
-export default function SharedProjectPage({ params }: { params: { id: string } }) {
-  return <PublicProject id={params.id} />;
+export default async function SharedProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <PublicProject id={id} />;
 }
