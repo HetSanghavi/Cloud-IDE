@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cloudide
+      POSTGRES_USER: cloudide
+      POSTGRES_PASSWORD: cloudide
+    ports:
+      - "5432:5432"
+    volumes:
+      - cloudide_postgres:/var/lib/postgresql/data
+
+volumes:
+  cloudide_postgres:

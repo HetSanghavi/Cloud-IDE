@@ -1,0 +1,42 @@
+{
+  "name": "cloudide",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:concurrency": "node --env-file=.env --test tests/project-concurrency.test.cjs",
+    "test:account-uniqueness": "node --env-file=.env --test tests/account-uniqueness.test.cjs",
+    "test:medium-low": "node --test tests/medium-low.test.cjs",
+    "test:zip-import": "node --test tests/zip-import.test.cjs",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "@next/swc-darwin-arm64": "^14.2.33",
+    "@prisma/client": "^5.19.1",
+    "bcryptjs": "^2.4.3",
+    "jszip": "^3.10.1",
+    "next": "^14.2.5",
+    "next-auth": "^5.0.0-beta.20",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jszip": "^3.4.1",
+    "@types/node": "^20.14.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.5",
+    "prisma": "^5.19.1",
+    "typescript": "^5.5.4"
+  }
+}
