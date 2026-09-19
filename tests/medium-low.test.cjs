@@ -75,3 +75,15 @@ test("dashboard project menus close outside their active card and expose sharing
   assert.match(source, /onShare\(project\)/);
   assert.match(source, /<Icon name="share" \/>Share/);
 });
+
+test("the unauthenticated landing page renders its static demo without waiting for the IDE or session state", () => {
+  const page = fs.readFileSync(path.join(root, "app", "page.tsx"), "utf8");
+  const landing = fs.readFileSync(path.join(root, "components", "landing-page.tsx"), "utf8");
+  const ide = fs.readFileSync(path.join(root, "components", "cloud-ide.tsx"), "utf8");
+  assert.match(page, /import \{ LandingPage \} from "@\/components\/landing-page"/);
+  assert.match(landing, /return status === "authenticated" \? <Workspace \/> : <LandingScreen \/>/);
+  assert.match(landing, /className="landing-demo-editor"/);
+  assert.match(landing, /className="landing-demo-preview"/);
+  assert.doesNotMatch(landing, /Checking session|sessionLoading|@monaco-editor\/react|<iframe|srcDoc/);
+  assert.doesNotMatch(ide, /function LandingWorkspaceDemo|function AuthScreen/);
+});

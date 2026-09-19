@@ -1,5 +1,5 @@
-import { CloudIDE } from "@/components/cloud-ide";
+import { LandingPage } from "@/components/landing-page";
 
 export default function Home() {
-  return <CloudIDE />;
+  return <LandingPage />;
 }

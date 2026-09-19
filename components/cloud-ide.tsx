@@ -2,8 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { ChangeEvent, CSSProperties, PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
-import { getProviders, signIn, signOut, useSession } from "next-auth/react";
-import { loginFormMessage, oauthFormMessage } from "@/lib/auth-messages";
+import { signOut, useSession } from "next-auth/react";
 import { collectNodeIds, deletionConfirmationMessage } from "@/lib/project-deletion";
 import { templateMeta } from "@/lib/templates";
 import { OpenFile, Project, ProjectFile, TemplateKey } from "@/lib/types";
@@ -334,37 +333,7 @@ export function CloudIDE() {
   const openExternalPreview = () => { if (!active) return; window.open(`/preview/${active.id}`, "_blank", "noopener,noreferrer"); };
   const dashboardProjects = useMemo(() => projects.filter(project => project.name.toLowerCase().includes(query.toLowerCase())).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : new Date(sort === "created" ? b.createdAt : b.updatedAt).getTime() - new Date(sort === "created" ? a.createdAt : a.updatedAt).getTime()), [projects, query, sort]);
 
-  const authenticate = async (name: string, email: string, password: string, signup: boolean) => {
-    if (signup) {
-      try {
-        const registration = await fetch("/api/auth/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password }) });
-        if (!registration.ok) {
-          const body = await registration.json().catch(() => null) as { error?: string } | null;
-          return body?.error || "Unable to create this account. Please try again.";
-        }
-      } catch {
-        return "Unable to create this account. Please try again.";
-      }
-    }
-
-    try {
-      const result = await signIn("credentials", { email, password, redirect: false });
-      return result?.error ? loginFormMessage(result.code) : null;
-    } catch {
-      return "Unable to log in. Please try again.";
-    }
-  };
-  const authenticateWithGoogle = async () => {
-    try {
-      const providers = await getProviders();
-      if (!providers?.google) return "Google sign-in is not configured. Please use email and password for now.";
-      await signIn("google", { redirectTo: "/" });
-      return null;
-    } catch {
-      return "Google sign-in could not be started. Please try again.";
-    }
-  };
-  if (status !== "authenticated") return <AuthScreen onEnter={authenticate} onGoogle={authenticateWithGoogle} theme={theme} setTheme={setTheme} sessionLoading={status === "loading"} />;
+  if (status !== "authenticated") return null;
   if (!active) return <><input ref={importRef} onChange={importZip} type="file" accept=".zip,application/zip,application/x-zip-compressed" hidden /><Dashboard user={user} projects={dashboardProjects} query={query} setQuery={setQuery} sort={sort} setSort={setSort} theme={theme} setTheme={setTheme} onCreate={() => setModal("create")} onTemplates={() => { setNewTemplate("blank"); setModal("create"); }} onLearn={() => setLearnOpen(true)} onOpen={openProject} onShare={project => { openProject(project); setModal("share"); }} onRename={renameProject} onDuplicate={duplicateProject} onDelete={deleteProject} onExport={exportZip} onImport={() => importRef.current?.click()} onLogout={() => void signOut({ callbackUrl: "/" })} />{modal === "create" && <CreateModal name={newName} setName={setNewName} template={newTemplate} setTemplate={setNewTemplate} onClose={() => setModal(null)} onCreate={createProject} />}{learnOpen && <LearnModal onClose={() => setLearnOpen(false)} onCreate={() => { setLearnOpen(false); setModal("create"); }} />}</>;
 
   const viewport = mode === "desktop" ? "100%" : mode === "tablet" ? "768px" : "390px";
@@ -410,20 +379,6 @@ export function PublicProject({ id }: { id: string }) {
   if (!project) return <main className="share-missing"><button className="logo-button" onClick={() => window.location.href = "/"}><span className="brand-mark">⌘</span><span>cloud<span>ide</span></span></button><div><span className="brand-mark">⌘</span><h1>This project isn’t available.</h1><p>It may be private, moved, or the link may be incomplete.</p><button className="button primary" onClick={() => window.location.href = "/"}>Go to Cloud IDE</button></div></main>;
   const width = mode === "desktop" ? "100%" : mode === "tablet" ? "768px" : "390px";
   return <main className="public-project"><header className="public-nav"><button className="logo-button" onClick={() => window.location.href = "/"}><span className="brand-mark">⌘</span><span>cloud<span>ide</span></span></button><div className="public-actions"><span className="public-badge"><i></i> Public project</span><button className="button ghost" onClick={async () => { await navigator.clipboard.writeText(window.location.href); setCopied(true); }}>{copied ? <><Icon name="check" size={16} /> Copied</> : <><Icon name="share" size={16} /> Share</>}</button><button className="button primary" onClick={duplicate}><Icon name="copy" size={16} /> Copy to my workspace</button></div></header><section className="public-heading"><div><p className="eyebrow">A CLOUD IDE PROJECT</p><h1>{project.name}</h1><p>Explore this web project, preview it live, and make a copy to continue building.</p></div><div className="public-meta"><span>{templateMeta[project.template].glyph} {templateMeta[project.template].title}</span><span>Updated {new Date(project.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div></section><section className="public-workspace"><aside><p>PROJECT FILES</p>{flatFiles(project.files).map(file => <div key={file.id}><span className={`file-symbol ${extLanguage(file.name)}`}></span>{file.name}</div>)}</aside><div className="public-preview"><header><div className="device-buttons"><button className={mode === "desktop" ? "active" : ""} onClick={() => setMode("desktop")}><Icon name="monitor" size={16} /></button><button className={mode === "tablet" ? "active" : ""} onClick={() => setMode("tablet")}><Icon name="tablet" size={16} /></button><button className={mode === "mobile" ? "active" : ""} onClick={() => setMode("mobile")}><Icon name="mobile" size={16} /></button></div><span><span className="preview-led"></span> Live preview</span></header><div className="preview-canvas"><div className={`device-frame ${mode}`} style={{ width }}><iframe title={`${project.name} preview`} sandbox="allow-scripts allow-forms allow-modals" srcDoc={previewDocument(project, [], "public-preview")} /></div></div></div></section></main>;
-}
-
-function GoogleIcon() {
-  return <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M21.35 12.23c0-.71-.06-1.2-.19-1.71H12v3.24h5.38c-.11.8-.7 2-2 2.81l-.02.11 2.91 2.25.2.02c1.84-1.7 2.88-4.2 2.88-7.72Z" /><path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.46-2.37l-3.08-2.38c-.82.57-1.93.97-3.38.97a5.87 5.87 0 0 1-5.55-4.05l-.1.01-3.03 2.34-.04.09A9.75 9.75 0 0 0 12 21.75Z" /><path fill="#FBBC05" d="M6.45 13.92A5.92 5.92 0 0 1 6.14 12c0-.67.12-1.32.3-1.92l-.01-.13-3.07-2.38-.1.05A9.74 9.74 0 0 0 2.25 12c0 1.57.37 3.05 1.01 4.38l3.19-2.46Z" /><path fill="#EA4335" d="M12 6.03c1.82 0 3.05.79 3.75 1.45l2.74-2.67C16.83 3.25 14.63 2.25 12 2.25a9.74 9.74 0 0 0-8.74 5.37l3.18 2.46A5.9 5.9 0 0 1 12 6.03Z" /></svg>;
-}
-
-function LandingWorkspaceDemo() {
-  return <aside className="landing-workspace" aria-label="Cloud IDE workspace demonstration"><header className="landing-demo-bar"><span><i></i><i></i><i></i></span><b>My landing page</b><small>Preview ready</small></header><div className="landing-demo-body"><section className="landing-demo-editor"><header><span>index.html</span><small>HTML</small></header><pre><code><span><b>01</b><em>&lt;main&gt;</em></span><span><b>02</b>  <em>&lt;h1&gt;</em>Make it real<em>&lt;/h1&gt;</em></span><span><b>03</b>  <em>&lt;p&gt;</em>Build from an idea.<em>&lt;/p&gt;</em></span><span><b>04</b>  <em>&lt;a&gt;</em>Start creating<em>&lt;/a&gt;</em></span><span><b>05</b><em>&lt;/main&gt;</em></span></code></pre></section><section className="landing-demo-preview"><header><span><i></i> Live preview</span></header><div className="landing-preview-page"><p>STUDIO / 01</p><h2>Make your next<br/>idea <em>real.</em></h2><span>Build focused web experiences in one place.</span><b>Start creating <strong>→</strong></b></div></section></div></aside>;
-}
-
-function AuthScreen({ onEnter, onGoogle, theme, setTheme, sessionLoading }: { onEnter: (name: string, email: string, password: string, signup: boolean) => Promise<string | null>; onGoogle: () => Promise<string | null>; theme: "dark" | "light"; setTheme: (value: "dark" | "light") => void; sessionLoading: boolean }) {
-  const [signup, setSignup] = useState(true); const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [message, setMessage] = useState(""); const [submitting, setSubmitting] = useState(false);
-  useEffect(() => { const code = new URLSearchParams(window.location.search).get("error"); if (code) setMessage(oauthFormMessage(code)); }, []);
-  return <main className="auth-page"><button className="auth-theme" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}><Icon name={theme === "dark" ? "sun" : "moon"} /></button><section className="auth-copy"><button className="logo-button"><span className="brand-mark">⌘</span><span>cloud<span>ide</span></span></button><div><span className="auth-pill">The modern web workspace</span><h1>Ideas deserve<br/><em>momentum.</em></h1><p>Design, build and share beautiful web projects in one focused browser workspace.</p></div><LandingWorkspaceDemo /></section><section className="auth-form-wrap"><form className="auth-form" onSubmit={async event => { event.preventDefault(); if (sessionLoading) return; setSubmitting(true); setMessage(""); try { const result = await onEnter(name, email, password, signup); if (result) setMessage(result); } finally { setSubmitting(false); } }}><div className="form-heading"><p>{signup ? "GET STARTED FOR FREE" : "WELCOME BACK"}</p><h2>{signup ? "Create your space." : "Pick up where you left off."}</h2></div>{signup && <label>Username<input value={name} onChange={event => setName(event.target.value)} placeholder="alexmorgan" required minLength={2} maxLength={60} /></label>}<label>Email address<input type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" required /></label><label>Password<input type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="••••••••" required minLength={8} maxLength={72} /></label>{message && <p className="form-error" role="alert" aria-live="polite">{message}</p>}<button className="auth-submit" type="submit" disabled={submitting || sessionLoading}>{sessionLoading ? "Checking session" : submitting ? "Please wait" : signup ? "Create account" : "Log in"}<Icon name="arrow" size={17} /></button><div className="auth-divider"><span>or</span></div><button className="oauth-button" type="button" disabled={submitting || sessionLoading} onClick={async () => { if (sessionLoading) return; setSubmitting(true); setMessage(""); try { const result = await onGoogle(); if (result) setMessage(result); } finally { setSubmitting(false); } }}><GoogleIcon /> Continue with Google</button><p className="form-switch">{signup ? "Already have an account?" : "New to Cloud IDE?"} <button type="button" disabled={sessionLoading} onClick={() => { setSignup(value => !value); setMessage(""); }}>{signup ? "Log in" : "Create account"}</button></p></form></section></main>;
 }
 
 function Dashboard({ user, projects, query, setQuery, sort, setSort, theme, setTheme, onCreate, onTemplates, onLearn, onOpen, onShare, onRename, onDuplicate, onDelete, onExport, onImport, onLogout }: { user: { name: string; email: string }; projects: Project[]; query: string; setQuery: (value: string) => void; sort: "updated" | "name" | "created"; setSort: (value: "updated" | "name" | "created") => void; theme: "dark" | "light"; setTheme: (value: "dark" | "light") => void; onCreate: () => void; onTemplates: () => void; onLearn: () => void; onOpen: (project: Project) => void; onShare: (project: Project) => void; onRename: (project: Project) => void; onDuplicate: (project: Project) => void; onDelete: (project: Project) => void; onExport: (project: Project) => void; onImport: () => void; onLogout: () => void }) {
