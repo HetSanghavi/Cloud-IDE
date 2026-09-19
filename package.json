@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "engines": {
-    "node": ">=20.9 <21"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:concurrency": "node --env-file=.env --test tests/project-concurrency.test.cjs",

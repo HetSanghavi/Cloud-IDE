@@ -6,7 +6,7 @@ A focused browser-based workspace for creating HTML, CSS, and JavaScript project
 
 Prerequisites:
 
-- Node.js 20.9+ within the 20.x release line
+- Node.js 24.x
 - Docker Desktop, or an available PostgreSQL database
 
 ```bash
@@ -40,11 +40,10 @@ The included `docker-compose.yml` supplies local PostgreSQL settings matching `.
 
 ## Deployment notes
 
-Deploy on a Node.js 20 host with a managed PostgreSQL database. Build and release with:
+Deploy on a Node.js 24 host with a managed PostgreSQL database. Dependencies run Prisma Client generation automatically during installation; build and release with:
 
 ```bash
 npm ci
-npm run db:generate
 npm run db:deploy
 npm run build
 npm run start
