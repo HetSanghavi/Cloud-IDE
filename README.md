@@ -29,6 +29,7 @@ Copy `.env.example` to `.env` before running the app. Configure:
 - `DATABASE_URL` for PostgreSQL
 - `AUTH_SECRET` with a high-entropy secret
 - `AUTH_TRUST_HOST=true` for local and deployed Auth.js hosts
+- `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` when enabling Google OAuth
 
 Generate a local secret with:
 
@@ -50,6 +51,8 @@ npm run start
 ```
 
 `DATABASE_URL` and `AUTH_SECRET` are secrets. Use a production PostgreSQL URL rather than the local Docker URL, retain a stable high-entropy `AUTH_SECRET`, and configure `AUTH_TRUST_HOST=true` only behind a trusted proxy that provides a correct host header.
+
+To enable Google OAuth, create a Google OAuth web client and add `https://your-domain/api/auth/callback/google` as an authorized redirect URI. Store its client ID in `AUTH_GOOGLE_ID` and its client secret in `AUTH_GOOGLE_SECRET` as deployment-managed secrets.
 
 ZIP import accepts archives up to 8 MB. Configure the hosting platform or reverse proxy request-body limit above 8 MB so the application can apply its archive validation itself.
 

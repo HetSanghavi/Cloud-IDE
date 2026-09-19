@@ -22,7 +22,7 @@ export async function authorizeCredentials(credentials: unknown, request: Pick<N
   const key = `login:${getClientKey(request)}:${parsed.data.email}`;
   if (isRateLimited(key, 10, 15 * 60 * 1000)) throw new LoginRateLimitError();
   const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (!user || !await bcrypt.compare(parsed.data.password, user.passwordHash)) return null;
+  if (!user?.passwordHash || !await bcrypt.compare(parsed.data.password, user.passwordHash)) return null;
   clearRateLimit(key);
   return { id: user.id, name: user.name, email: user.email, image: user.image };
 }
