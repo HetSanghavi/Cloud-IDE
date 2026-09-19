@@ -87,3 +87,16 @@ test("the unauthenticated landing page renders its static demo without waiting f
   assert.doesNotMatch(landing, /Checking session|sessionLoading|@monaco-editor\/react|<iframe|srcDoc/);
   assert.doesNotMatch(ide, /function LandingWorkspaceDemo|function AuthScreen/);
 });
+
+test("the IDE uses the bundled Monaco instance and gives its sandboxed preview a stable layout", () => {
+  const ide = fs.readFileSync(path.join(root, "components", "cloud-ide.tsx"), "utf8");
+  const editor = fs.readFileSync(path.join(root, "components", "monaco-editor.tsx"), "utf8");
+  const styles = fs.readFileSync(path.join(root, "app", "globals.css"), "utf8");
+  assert.match(ide, /import\("@\/components\/monaco-editor"\)/);
+  assert.match(editor, /import\("monaco-editor"\)/);
+  assert.match(editor, /loader\.config\(\{ monaco \}\)/);
+  assert.doesNotMatch(editor, /cdn\.jsdelivr\.net/);
+  assert.match(ide, /sandbox="allow-scripts allow-forms allow-modals"/);
+  assert.match(styles, /\.editor-section,\.preview-section\{min-height:0\}/);
+  assert.match(styles, /\.device-frame iframe\{display:block;min-width:0\}/);
+});

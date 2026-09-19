@@ -18,7 +18,7 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
 }
 
 const colors = ["violet", "orange", "blue", "pink"];
-const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: () => <div className="editor-loading">Loading editor…</div> });
+const Editor = dynamic(() => import("@/components/monaco-editor"), { ssr: false, loading: () => <div className="editor-loading">Loading editor…</div> });
 const initialUser = { name: "Creator", email: "" };
 const uid = () => typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 const stamp = () => new Date().toISOString();
